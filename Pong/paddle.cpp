@@ -4,13 +4,14 @@
 #include "paddle.h"
 
 // Constructor
-Paddle::Paddle(RenderWindow& window, bool isAI, float windWidth, float windHeight, float paddleSpeed) : myWindow(window)
+Paddle::Paddle(RenderWindow& window, bool isAI,  bool isCenterPaddle, float windWidth, float windHeight, float paddleSpeed) : myWindow(window)
 {
 	paddleSize = { 20,100 };
 	paddle.setSize(paddleSize - sf::Vector2f(3, 3));
 	paddle.setFillColor(sf::Color(250, 250, 250));
 	this->isAI = isAI;
 	this->paddleSpeed = paddleSpeed;
+    this->isCenterPaddle = isCenterPaddle;
 
 	paddle.setOrigin(paddleSize / 2.f);
 
@@ -23,6 +24,12 @@ Paddle::Paddle(RenderWindow& window, bool isAI, float windWidth, float windHeigh
 		paddle.setPosition(windWidth - 10 - paddleSize.x / 2, windHeight / 2);
 		paddle.setFillColor(sf::Color(250, 250, 250));
 	}
+    
+    if (isCenterPaddle)
+    {
+        paddle.setSize(50,50);
+        paddle.setPosition(windWidth - paddleSize.x / 2, windHeight / 2);
+    }
 
 	this->windWidth = windWidth;
 	this->windHeight = windHeight;
@@ -31,46 +38,71 @@ Paddle::Paddle(RenderWindow& window, bool isAI, float windWidth, float windHeigh
 
 void Paddle::move(float dt, Vector2f ballPos)
 {
-	if (isAI == false)
-	{
-		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up) &&
-			(paddle.getPosition().y - paddleSize.y / 2 > 5.f))
-		{
-			paddle.move(0.f, -paddleSpeed * dt);
-		}
-		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Down) &&
-			(paddle.getPosition().y + paddleSize.y / 2 < windHeight - 5.f))
-		{
-			paddle.move(0.f, paddleSpeed * dt);
-		}
+    if (isCenterPaddle == false)
+    {
+        
+        if (isAI == false)
+        {
+            if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up) &&
+                (paddle.getPosition().y - paddleSize.y / 2 > 5.f))
+            {
+                paddle.move(0.f, -paddleSpeed * dt);
+            }
+            if (sf::Keyboard::isKeyPressed(sf::Keyboard::Down) &&
+                (paddle.getPosition().y + paddleSize.y / 2 < windHeight - 5.f))
+            {
+                paddle.move(0.f, paddleSpeed * dt);
+            }
 
-		this->ballPos = ballPos;
-		//position += direction * speed;
-		//ball.setPosition(position);
+            this->ballPos = ballPos;
+            //position += direction * speed;
+            //ball.setPosition(position);
 
-		/*if (position.y > myWindow.getSize().y && direction.y > 0)
-			direction.y = -direction.y;
-		if (position.y < 0 && direction.y < 0)
-			direction.y = -direction.y;
-		if (position.x > myWindow.getSize().x && direction.x > 0)
-			direction.x = -direction.x;
-		if (position.x < 0 && direction.x < 0)
-			direction.x = -direction.x;*/
-	}
+            /*if (position.y > myWindow.getSize().y && direction.y > 0)
+                direction.y = -direction.y;
+            if (position.y < 0 && direction.y < 0)
+                direction.y = -direction.y;
+            if (position.x > myWindow.getSize().x && direction.x > 0)
+                direction.x = -direction.x;
+            if (position.x < 0 && direction.x < 0)
+                direction.x = -direction.x;*/
+        }
 
-	else
-	{
-		if (ballPos.y > paddle.getPosition().y && (paddle.getPosition().y + paddleSize.y / 2 < windHeight - 5.f))
-		{
-			paddle.setPosition(paddle.getPosition().x, paddle.getPosition().y + paddleSpeed * dt);
-		}
+        else
+        {
+            if (ballPos.y > paddle.getPosition().y && (paddle.getPosition().y + paddleSize.y / 2 < windHeight - 5.f))
+            {
+                paddle.setPosition(paddle.getPosition().x, paddle.getPosition().y + paddleSpeed * dt);
+            }
 
-		else if (ballPos.y < paddle.getPosition().y &&
-			(paddle.getPosition().y - paddleSize.y / 2 > 5.f))
-		{
-			paddle.setPosition(paddle.getPosition().x, paddle.getPosition().y - paddleSpeed * dt);
-		}
-	}
+            else if (ballPos.y < paddle.getPosition().y &&
+                (paddle.getPosition().y - paddleSize.y / 2 > 5.f))
+            {
+                paddle.setPosition(paddle.getPosition().x, paddle.getPosition().y - paddleSpeed * dt);
+            }
+        }
+    }
+    else
+    {
+        if (goingUp == false && (paddle.getPosition().y + paddleSize.y / 2 < windHeight - 5.f))
+        {
+            if (paddle.getPosition().y + paddleSize.y / 2 >= windHeight - 6.f)
+                goingUp = true;
+            
+            paddle.setPosition(paddle.getPosition().x, paddle.getPosition().y + paddleSpeed * dt);
+        }
+        
+        else if (goingUp == false &&
+                 (paddle.getPosition().y - paddleSize.y / 2 > 5.f))
+        {
+            if (paddle.getPosition().y - paddleSize.y / 2 < 6.f))
+                goingUp = true;
+            
+            paddle.setPosition(paddle.getPosition().x, paddle.getPosition().y - paddleSpeed * dt);
+        }
+   
+    }
+    
 }
 
 void Paddle::draw()

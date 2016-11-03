@@ -22,8 +22,10 @@ public:
 	RenderWindow& myWindow;
 	float paddleSpeed = 0;
 	bool isAI;
+    bool isCenterBlock;
+    bool goingUp;
 
-	Paddle(RenderWindow& window, bool isAI, float windWidth, float windHeight, float paddleSpeed);
+	Paddle(RenderWindow& window, bool isAI, bool isCenterBlock, float windWidth, float windHeight, float paddleSpeed);
 
 	void move(float dt, Vector2f ballPos);
 	void draw();

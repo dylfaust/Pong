@@ -49,7 +49,7 @@ Ball::Ball(RenderWindow& window) : myWindow(window)
 
 }
 
-void Ball::move(float dt, Vector2f paddlePos, Vector2f paddleSize)
+void Ball::move(float dt, Vector2f paddlePos, Vector2f paddleSize, Vector2f middlePos, Vector2f middleSize)
 {
 	position += direction * speed * dt;
 	ball.setPosition(position);

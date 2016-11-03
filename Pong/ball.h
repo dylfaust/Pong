@@ -25,8 +25,8 @@ public:
 	RenderWindow& myWindow;
 	float speed = 100;
 	float startingSpeed = 0;
-	int scoreL = 0;
-	int scoreR = 0;
+	public static int scoreL = 0;
+	public static int scoreR = 0;
 	bool lost = false;
 	float angle = 0;
 	float base = 0.0f;
@@ -37,7 +37,7 @@ public:
 
 	Ball(RenderWindow& window);
 
-	void move(float dt, Vector2f paddlePos, Vector2f paddleSize);
+	void move(float dt, Vector2f paddlePos, Vector2f paddleSize, Vector2f middlePos, Vector2f, middleSize);
 	void draw();
 	void reset();
 	void hit();

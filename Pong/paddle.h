@@ -22,12 +22,13 @@ public:
 	RenderWindow& myWindow;
 	float paddleSpeed = 0;
 	bool isAI;
-    bool isCenterBlock;
+    bool isCenterPaddle;
     bool goingUp;
+	bool multiBall = false;
 
 	Paddle(RenderWindow& window, bool isAI, bool isCenterBlock, float windWidth, float windHeight, float paddleSpeed);
 
-	void move(float dt, Vector2f ballPos);
+	void move(float dt, Vector2f ballPos, Vector2f ballPos2, bool multiBall);
 	void draw();
 	void reset();
 };

@@ -5,11 +5,12 @@
 #include <iostream>
 #include <cstdlib>
 #include <ctime>
+#include <math.h> 
 
 // Constructor
 Ball::Ball(RenderWindow& window) : myWindow(window)
 {
-	bounce.loadFromFile("pistol.wav");
+	bounce.loadFromFile("resources/Click.wav");
 	sound.setBuffer(bounce);
 	pi = 2.141593;
 	radius = 10;
@@ -19,13 +20,10 @@ Ball::Ball(RenderWindow& window) : myWindow(window)
 	ball.setPosition(400, 300);
 	position = ball.getPosition();
 	direction = { 5,1 };
-	speed = 70.0f;
+	speed = 500.0f;
+	scoreL = 0;
+	scoreR = 0;
 	srand((unsigned)time(NULL));
-	do
-	{
-		// Make sure the ball initial angle is not too much vertical
-		angle = (rand() % 360) * 2 * pi / 360;
-	} while (std::abs(std::cos(angle)) < 0.7f);
 	base = 0.13f;
 	startingSpeed = speed;
 
@@ -45,13 +43,16 @@ Ball::Ball(RenderWindow& window) : myWindow(window)
 	{
 		direction.y = -direction.y;
 	}
-
-
 }
 
+// Moves the ball
 void Ball::move(float dt, Vector2f paddlePos, Vector2f paddleSize, Vector2f middlePos, Vector2f middleSize)
 {
-	position += direction * speed * dt;
+	float l = sqrt(pow(direction.x, 2.0f) + pow(direction.x, 2.0f)); // 5.831
+	Vector2f b;
+	b.x = direction.x / l; // 0.514
+	b.y = direction.y / l; // 0.857
+	position += b * speed * dt;
 	ball.setPosition(position);
 	this->paddlePos = paddlePos;
 
@@ -66,7 +67,7 @@ void Ball::move(float dt, Vector2f paddlePos, Vector2f paddleSize, Vector2f midd
 		ball.setPosition(400, 300);
 		position = ball.getPosition();
 	}
-		//direction.x = -direction.x;
+
 	if (position.x < 0 && direction.x < 0)
 	{
 		lost = true;
@@ -75,13 +76,11 @@ void Ball::move(float dt, Vector2f paddlePos, Vector2f paddleSize, Vector2f midd
 		position = ball.getPosition();
 		ball.setPosition(0, 0);
 	}
-		//direction.x = -direction.x;
 
 	//Check if its inside paddle before moving, only make it bounce right if its moving to left
-
-	// Going left
+	// Going left collision detection
 	if (ball.getPosition().x - radius < paddlePos.x + paddleSize.x / 2 &&
-		ball.getPosition().x - radius > paddlePos.x &&
+		ball.getPosition().x - radius > paddlePos.x - paddleSize.x / 2 &&
 		ball.getPosition().y + radius >= paddlePos.y - paddleSize.y / 2 &&
 		ball.getPosition().y - radius <= paddlePos.y + paddleSize.y / 2 && direction.x < 0)
 	{
@@ -102,9 +101,9 @@ void Ball::move(float dt, Vector2f paddlePos, Vector2f paddleSize, Vector2f midd
 		}
 	}
 
-	// Going right
-	else if (ball.getPosition().x + radius > paddlePos.x - paddleSize.x / 2 &&
-		ball.getPosition().x + radius < paddlePos.x &&
+	// Going right collision detection
+	else if (ball.getPosition().x + radius > paddlePos.x - paddleSize.x / 2 + 7 &&
+		ball.getPosition().x + radius < paddlePos.x + paddleSize.x/2 &&
 		ball.getPosition().y + radius >= paddlePos.y - paddleSize.y / 2 &&
 		ball.getPosition().y - radius <= paddlePos.y + paddleSize.y / 2 && direction.x > 0)
 	{
@@ -121,22 +120,66 @@ void Ball::move(float dt, Vector2f paddlePos, Vector2f paddleSize, Vector2f midd
 			direction.y = -(base * dist);
 		}
 	}
-	//std::cout << direction.y << std::endl;
+
+	// Middle paddle from the left collision detection
+	else if (ball.getPosition().x - radius < middlePos.x + middleSize.x / 2 &&
+		ball.getPosition().x - radius > middlePos.x - middleSize.x / 2 &&
+		ball.getPosition().y + radius >= middlePos.y - middleSize.y / 2 &&
+		ball.getPosition().y - radius <= middlePos.y + middleSize.y / 2 && direction.x < 0)
+	{
+		direction.x = -direction.x;
+		hit();
+		if (ball.getPosition().y > middlePos.y)
+		{
+			float dist = ball.getPosition().y - middlePos.y;
+			direction.y = base * dist;
+		}
+		else
+		{
+			float dist = middlePos.y - ball.getPosition().y;
+			direction.y = -(base * dist);
+		}
+	}
+
+	// Middle paddle from the right collision detection
+	else if (ball.getPosition().x + radius > middlePos.x - middleSize.x / 2 + 7 &&
+		ball.getPosition().x + radius < middlePos.x + middleSize.x / 2 &&
+		ball.getPosition().y + radius >= middlePos.y - middleSize.y / 2 &&
+		ball.getPosition().y - radius <= middlePos.y + middleSize.y / 2 && direction.x > 0)
+	{
+		direction.x = -direction.x;
+		hit();
+
+		// If it's on the underside of the paddle
+		if (ball.getPosition().y > middlePos.y)
+		{
+			float dist = ball.getPosition().y - middlePos.y;
+			direction.y = base * dist;
+		}
+
+		else
+		{
+			float dist = middlePos.y - ball.getPosition().y;
+			direction.y = -(base * dist);
+		}
+	}
 }
 
-
+// Draw ball
 void Ball::draw()
 {
 	myWindow.draw(ball);
 }
 
+// If ball hits a paddle, do this
 void Ball::hit()
 {
+	myWindow.clear(sf::Color(255, 255, 255, 255));
 	sound.play();
-	speed += 1.5;
-	std::cout << speed;
+	speed += 10;
 }
 
+// Resets ball to starting position
 void Ball::reset()
 {
 	ball.setPosition(400, 300);
@@ -158,5 +201,4 @@ void Ball::reset()
 	}
 
 	speed = startingSpeed;
-//	direction = { dirA, dirB };
 }

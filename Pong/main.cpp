@@ -4,55 +4,8 @@
  Author: Dylan Faust
  Date : 11/3/16
  Purpose: To rebuild the classic game PONG in SFML and C++
- 
- 
- GOALS: 
- 
-[X] A - When the program is run, a window is displayed. 
-The window can be moved around without freezing. 
-When the window is closed, the application exits.
 
-[X] B - There is a "paddle" on one edge of the screen. 
-The player can control the paddle using the keyboard and/or the mouse. 
-The game prevents the paddle from leaving the playing area.
-
-[X] C - There is another "paddle" on the other edge of the screen. This paddle is controlled by an "A.I." player. The A.I. must attempt to block the ball, but it must also not play perfectly.
-
-[ ] D - There is also a "ball" that starts in the middle of the screen. It starts flying towards one of the screen edges occupied by a player.
-
-[X] E - Both the "ball" and "paddles" are implemented using C++ classes. Both paddles must use the same class. The ball class must be responsible for tracking and updating the ball's location, speed, and direction, as well as drawing the ball to the screen. The paddle class must be responsible for tracking the paddle's location as well as drawing the paddle to the screen.
-
-[X] F - When the ball hits one of the player's paddles, it bounces off towards the other player. The angle at which it bounces off must depend on where on the paddle the ball hit.
-
-[X] G - Every time the ball hits one of the player's paddles, it increases in speed by a small amount.
-
-[X] H -If the ball hits an edge of the screen that is not occupied by a player's paddle, then the ball bounces off that edge.
-
-[X] I - If the ball goes past the player's paddle and off their edge of the screen, a point is awarded to the other player. The ball then resets back to the middle and starts flying again towards a player. The game displays the score for each player at all times.
-
-[X] J - The game displays at least one image texture (such as a sprite for the paddle or ball, or an image for the background) that is loaded from a file.
-
-[ ] K - The game plays at least one sound effect (such as when the ball hits a paddle or screen edge, or when a point is scored) that is loaded from a file.
-
-[X] L - When one player scores 5 points, that player is declared the winner. The player can then press the spacebar to play a new game.
-
-Extra
-
-[/] O - There is an obstacle in the middle of the playing area that the ball will bounce off of when hit.
-
-[ ] s - 
-The game has an absurd, Peggle-esque attention to detail. Just about everything that can happen in the game has fun visual and sound effects to go along with it. To get the full 15 points for this bonus objective, you must have all of these things:
-Visual and sound effects when the game starts
-Visual and sound effects when the ball bounces off the edges of the screen
-Visual and sound effects when the ball bounces off a player's paddle
-Visual and sound effects when a player scores a point.
-Visual and sound effects when a player has won.
-Visual effects (particle trail?) as the ball moves.
-Visual effects (particle trail?) as the paddles move.
-Visual and sound effects for any other bonus objectives, such as hitting an obstacle, the black-hole/repulsor, or powerups.
-An awesome musical soundtrack.
-
-*/
+ */
 
 #include <cmath>
 #include <ctime>
@@ -70,6 +23,8 @@ An awesome musical soundtrack.
 #include "paddle.h"
 
 using namespace sf;
+using namespace std;
+
 void update_state(float dt);
 void render_frame();
 RenderWindow window;
@@ -77,6 +32,7 @@ RenderWindow window;
 Vector2f vel(-300, 600);
 
 bool winner = false;
+bool multiBall = false;
 
 Texture tex;
 
@@ -84,6 +40,7 @@ float windWidth = 800;
 float windHeight = 600;
 
 Ball myBall = Ball(window);
+Ball myBall2 = Ball(window);
 Paddle leftPaddle = Paddle(window, false, false, windWidth, windHeight, 500.0f);
 Paddle rightPaddle = Paddle(window, true, false, windWidth, windHeight, 400.0f);
 Paddle centerPaddle = Paddle(window, true, true, windWidth, windHeight, 300.0f);
@@ -95,27 +52,26 @@ RectangleShape centerBlock;
 SoundBuffer buf;
 Sound sound;
 
+bool justLost = false;
+
 sf::Text scoreL;
 sf::Text scoreR;
 sf::Text replayText;
 Text winnerText;
-// select the font
 Font font;
 
-//The paddle class must be responsible for tracking the paddle's location as well as drawing the paddle to the screen.
-
+// Main function
 int main()
 {
-	buf.loadFromFile("pistol.wav");
-	sound.setBuffer(buf);
 
-	window.create(VideoMode(windWidth, windHeight), "SFML Example");
+	window.create(VideoMode(windWidth, windHeight), "PONG");
 	Clock clock;
+	// Background texture
 	tex.loadFromFile("Court.png");
 
+	// Initialize everything
 	bg.setSize(Vector2f(windWidth, windHeight));
 	bg.setPosition(0, 0);
-	//shape.setFillColor(Color::Red);
 	bg.setTexture(&tex);
 	bg.setPosition(0, 0);
 
@@ -123,16 +79,12 @@ int main()
 	centerBlock.setFillColor(sf::Color(250, 250, 250));
 	centerBlock.setPosition(windWidth/2-30, windHeight/2);
 
-	
-	//shape.setFillColor(Color::Red);
-	//bg.setTexture(&tex);
-
 	font.loadFromFile("Gameplay.TTF");
 	scoreL.setFont(font);
 	scoreL.setCharacterSize(50);
 	scoreL.setString("0");
 	scoreL.setColor(Color::White);
-	scoreL.setPosition(windWidth/2 - 50, 30);
+	scoreL.setPosition(windWidth/2 - 80, 30);
 	scoreR.setFont(font);
 	scoreR.setCharacterSize(50);
 	scoreR.setString("0");
@@ -141,19 +93,21 @@ int main()
 
 	replayText.setFont(font);
 	replayText.setCharacterSize(30);
-	replayText.setString("Press Space to Restart");
+	replayText.setString("Press Space to Begin Round\nOr Enter for Multiball");
 	replayText.setColor(Color::White);
-	replayText.setPosition(windWidth / 2 - 220, windHeight/2);
+	replayText.setPosition(windWidth / 2 - 240, windHeight/2);
 
 	winnerText.setFont(font);
 	winnerText.setCharacterSize(40);
 	winnerText.setString("PLAYER 2, You Win!");
 	winnerText.setColor(Color::Green);
 	winnerText.setPosition(windWidth / 2 - 210, windHeight / 2 - 70);
+
+	myBall2.direction = -myBall.direction;
+
+	// So the game starts paused
+	myBall.lost = true;
 	
-	// inside the main loop, between window.clear() and window.display()
-
-
 	// Main game loop
 	while (window.isOpen())
 	{
@@ -172,52 +126,97 @@ int main()
 
 	return 0;
 }
+
+// Updates the state of the game, moving all necessary objects, etc...
 void update_state(float dt)
 {
-	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Space) && myBall.lost == true) 
+	// If player hits space, play normal mode
+	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Space) && (myBall.lost == true || myBall2.lost == true)) 
 	{
+		multiBall = false;
 		sound.play();
 		if (winner == true)
 		{
 			winner = false;
 			myBall.scoreR = 0;
 			myBall.scoreL = 0;
-
+			myBall2.scoreR = 0;
+			myBall2.scoreL = 0;
 		}
 
 		myBall.lost = false;
 		myBall.reset();
+		myBall2.lost = false;
+		myBall2.reset();
+		myBall2.direction = -myBall.direction;
 		leftPaddle.reset();
 		rightPaddle.reset();
 	}
 
-	if (myBall.lost == false)
+	// If player hits enter, multiball
+	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Return) && (myBall.lost == true || myBall2.lost == true))
+	{
+		multiBall = true;
+		if (winner == true)
+		{
+			winner = false;
+			myBall.scoreR = 0;
+			myBall.scoreL = 0;
+			myBall2.scoreR = 0;
+			myBall2.scoreL = 0;
+		}
+
+		myBall.lost = false;
+		myBall.reset();
+		myBall2.lost = false;
+		myBall2.reset();
+		myBall2.direction = -myBall.direction;
+		leftPaddle.reset();
+		rightPaddle.reset();
+	}
+
+	if (myBall.lost == false && myBall2.lost == false)
 	{
 
-		leftPaddle.move(dt, myBall.ball.getPosition());
-		rightPaddle.move(dt, myBall.ball.getPosition());
-        centerPaddle.move(dt, myBall.ball.getPosition());
+		leftPaddle.move(dt, myBall.ball.getPosition(), myBall2.ball.getPosition(), multiBall);
+		rightPaddle.move(dt, myBall.ball.getPosition(), myBall2.ball.getPosition(), multiBall);
+        centerPaddle.move(dt, myBall.ball.getPosition(), myBall2.ball.getPosition(), multiBall);
+		
 		// If ball is in left side
 		if (myBall.ball.getPosition().x < windWidth / 2)
 		{
-			//std::cout << "right";
 			myBall.move(dt, leftPaddle.paddle.getPosition(), leftPaddle.paddle.getSize(), centerPaddle.paddle.getPosition(), centerPaddle.paddle.getSize());
 		}
+		
 		// If ball is in right side
 		else
 		{
-			myBall.move(dt, rightPaddle.paddle.getPosition(), rightPaddle.paddle.getSize());
+			myBall.move(dt, rightPaddle.paddle.getPosition(), rightPaddle.paddle.getSize(), centerPaddle.paddle.getPosition(), centerPaddle.paddle.getSize());
+		}
+		
+		// If ball 2 is in left side and multiball is active
+		if (myBall2.ball.getPosition().x < windWidth / 2 && multiBall == true)
+		{
+			myBall2.move(dt, leftPaddle.paddle.getPosition(), leftPaddle.paddle.getSize(), centerPaddle.paddle.getPosition(), centerPaddle.paddle.getSize());
+		}
+		
+		// If ball 2 is in right side and multiball is active
+		else if (multiBall == true)
+		{
+			myBall2.move(dt, rightPaddle.paddle.getPosition(), rightPaddle.paddle.getSize(), centerPaddle.paddle.getPosition(), centerPaddle.paddle.getSize());
 		}
 
-		scoreL.setString(std::to_string(myBall.scoreL));
-		scoreR.setString(std::to_string(myBall.scoreR));
+		// Set scores based on ball class' score variables
+		scoreL.setString(std::to_string(myBall.scoreL + myBall2.scoreL));
+		scoreR.setString(std::to_string(myBall.scoreR + myBall2.scoreR));
 
-		if (myBall.scoreL == 5)
+		// If a player wins...
+		if (myBall.scoreL + myBall2.scoreL >= 5)
 		{
 			winner = true;
 			winnerText.setString("PLAYER 1, You Win!");
 		}
-		if (myBall.scoreR == 5)
+		if (myBall.scoreR + myBall2.scoreR >= 5)
 		{
 			winner = true;
 			winnerText.setString("PLAYER 2, You Win!");
@@ -225,18 +224,27 @@ void update_state(float dt)
 	}
 	
 }
+
+// Renders the window, drawing everything within
 void render_frame()
 {
 	window.clear(sf::Color(0, 0, 0, 255));
 	window.draw(bg);
-	if (myBall.lost == false)
+	
+	// If neither player has lost, draw all of the game contents
+	if (myBall.lost == false && myBall2.lost == false)
 	{
-		//window.draw(centerBlock);
 		myBall.draw();
+		if (multiBall == true)
+		{
+			myBall2.draw();
+		}
 		leftPaddle.draw();
 		rightPaddle.draw();
         centerPaddle.draw();
 	}
+
+	// Otherwise, give them the replay promt
 	else
 	{
 		window.draw(replayText);
@@ -247,7 +255,7 @@ void render_frame()
 		window.draw(winnerText);
 	}
 
+	// Update the score
 	window.draw(scoreL);
 	window.draw(scoreR);
-	//window.draw(text);
 }

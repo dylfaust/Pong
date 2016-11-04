@@ -132,4 +132,8 @@ void Paddle::reset()
 	{
 		paddle.setPosition(windWidth - 10 - paddleSize.x / 2, windHeight / 2);
 	}
+	if (isCenterPaddle)
+	{
+		paddle.setPosition(windWidth / 2 - 1, (windHeight / 2) + 150);
+	}
 }

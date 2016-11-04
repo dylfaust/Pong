@@ -151,6 +151,7 @@ void update_state(float dt)
 		myBall2.direction = -myBall.direction;
 		leftPaddle.reset();
 		rightPaddle.reset();
+		centerPaddle.reset();
 	}
 
 	// If player hits enter, multiball
@@ -173,6 +174,7 @@ void update_state(float dt)
 		myBall2.direction = -myBall.direction;
 		leftPaddle.reset();
 		rightPaddle.reset();
+		centerPaddle.reset();
 	}
 
 	if (myBall.lost == false && myBall2.lost == false)
